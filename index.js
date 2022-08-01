@@ -4,7 +4,7 @@ const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const dns = require("dns");
-
+const validUrl = require("valid-url");
 // Basic Configuration
 const port = process.env.PORT || 3000;
 async function connect() {
@@ -49,30 +49,54 @@ app.get("/api/hello", function (req, res) {
 
 app.post("/api/shorturl", async function (req, res) {
   const { url } = req.body;
-  dns.lookup(url, async (err, address, family) => {
-    if (!address) {
-      return res.json({ error: "invalid url" });
-    } else {
-      let urlDoc = await UrlModel.findOne({ original_url: url });
-      if (urlDoc) {
-        return res.json({
-          original_url: urlDoc.original_url,
-          short_url: urlDoc.short_url,
-        });
-      }
 
-      let newUrl = await UrlModel.create({
-        original_url: url,
-      });
-      newUrl.short_url = newUrl._id;
-      await newUrl.save();
-
+  console.log(validUrl.isUri(url));
+  if (validUrl.isUri(url)) {
+    let urlDoc = await UrlModel.findOne({ original_url: url });
+    if (urlDoc) {
       return res.json({
-        original_url: newUrl.original_url,
-        short_url: newUrl.short_url,
+        original_url: urlDoc.original_url,
+        short_url: urlDoc.short_url,
       });
     }
-  });
+
+    let newUrl = await UrlModel.create({
+      original_url: url,
+    });
+    newUrl.short_url = newUrl._id;
+    await newUrl.save();
+
+    return res.json({
+      original_url: newUrl.original_url,
+      short_url: newUrl.short_url,
+    });
+  } else {
+    return res.json({ error: "invalid url" });
+  }
+  // dns.lookup(url, async (err, address, family) => {
+  //   if (!address) {
+  //     return res.json({ error: "invalid url" });
+  //   } else {
+  //     let urlDoc = await UrlModel.findOne({ original_url: url });
+  //     if (urlDoc) {
+  //       return res.json({
+  //         original_url: urlDoc.original_url,
+  //         short_url: urlDoc.short_url,
+  //       });
+  //     }
+
+  //     let newUrl = await UrlModel.create({
+  //       original_url: url,
+  //     });
+  //     newUrl.short_url = newUrl._id;
+  //     await newUrl.save();
+
+  //     return res.json({
+  //       original_url: newUrl.original_url,
+  //       short_url: newUrl.short_url,
+  //     });
+  //   }
+  // });
 });
 app.get("/api/shorturl/:url", async (req, res) => {
   const { url } = req.params;
