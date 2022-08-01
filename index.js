@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const dns = require("dns");
 const validUrl = require("valid-url");
 // Basic Configuration
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4444;
 async function connect() {
   try {
     console.log(`Tentando conectar-se com o banco de dados...`);
@@ -49,9 +49,7 @@ app.get("/api/hello", function (req, res) {
 
 app.post("/api/shorturl", async function (req, res) {
   const { url } = req.body;
-
-  console.log(validUrl.isUri(url));
-  if (validUrl.isUri(url)) {
+  if (validUrl.isWebUri(url)) {
     let urlDoc = await UrlModel.findOne({ original_url: url });
     if (urlDoc) {
       return res.json({
